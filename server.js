@@ -1,20 +1,22 @@
-const express = require('express');
+import { createClient } from 'redis';
+import express from 'express';
+
 const app = express();
 
-const redisClient = require('./redis-client');
+const client = createClient();
 
-app.get('/store/:key', async (req, res) => {
-    const { key } = req.params;
+const def_key = 'orders'
+
+app.get('/orders', async (req, res) => {
     const value = req.query;
-    await redisClient.setAsync(key, JSON.stringify(value));
+    await client.ZADD(def_key, JSON.stringify(value));
     return res.send('Success');
 });
 
-app.get('/:key', async (req, res) => {
-    const { key } = req.params;
-    const rawData = await redisClient.getAsync(key);
+app.get('/admin', async (req, res) => {
+    const rawData = await client.ZRANGEBYSCORE(def_key, '-inf', '+inf'); //zrangebyscore orders -inf +inf
     return res.json(JSON.parse(rawData));
-});
+})
 
 app.get('/', (req, res) => {
     return res.send('Hello World');
